@@ -46,9 +46,9 @@ class SiteBuilder():
             exit()
 
         if len(self.url) == 0:
-            self.debug = True
+            self.development = True
         else:
-            self.debug = False
+            self.development = False
             self.nginx_domain_path = os.path.join(self.nginx_conf_path, self.url + ".conf")
             self.nginx_domain_path_www = os.path.join(self.nginx_conf_path, self.www_url + ".conf")
 
@@ -146,7 +146,7 @@ FLUSH PRIVILEGES;
             SiteBuilder.new_file(secure_conf, os.path.join(self.nginx_conf_path, "secure.conf"))
         
         # Only create a conf file on the development server for socket connections
-        if self.debug:
+        if self.development:
             if self.has_gunicorn_service:
                 conf="""server {{
     listen 80;
@@ -344,7 +344,7 @@ WantedBy=multi-user.target
     def finalize(self) -> None:
         if self.has_symlink:
             os.system("chown -R " + self.username + ":" + self.username + " " + self.project_path)
-        if not self.debug:
+        if not self.development:
             os.system("chown -R nginx:nginx " + self.html_path)
         if self.has_gunicorn_service:
             os.system("systemctl restart " + self.project_name)
