@@ -18,13 +18,12 @@ def main(development):
         pmu = "yum"
     spiffindustries = SpiffIndustries("spiffindustries", url, "Spiff-Industries-Website", \
         "rbrutherford3", "robbie.rutherford@gmail.com", username, pmu,
-        True, "", False)
+        True, "", 0)
     spiffindustries.install(not development)
     spiffindustries.get_paths()
     spiffindustries.clone()
-    if not development:
-        print("### Configuring spiffindustries.com on NGINX ###")
-        spiffindustries.nginx_conf()
+    print("### Configuring NGINX ###")
+    spiffindustries.nginx_conf()
     print("### Finalizing ###")
     spiffindustries.finalize()
     print("### Finished! ###")

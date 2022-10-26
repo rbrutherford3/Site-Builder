@@ -29,7 +29,7 @@ def main(development: bool):
         project_root = ""
     lesley = Lesley(project_name, url, "Lesley-Paige-Art", \
         "rbrutherford3", "robbie.rutherford@gmail.com", username, pmu,
-        False, project_root, False)
+        False, project_root, 0)
     lesley.install(not development)
     lesley.get_paths()
     print("### Cloning repository ###")

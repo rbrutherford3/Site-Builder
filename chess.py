@@ -28,7 +28,7 @@ def main(development: bool):
         project_root = ""
     chess = Chess(project_name, url, "ASCII-Chess", \
         "rbrutherford3", "robbie.rutherford@gmail.com", username, pmu,
-        False, project_root, True)
+        False, project_root, 5000)
     chess.install(not development)
     chess.get_paths()
     print("### Cloning repository ###")

@@ -14,7 +14,7 @@ class SiteBuilder():
     # Constructor
     def __init__(self, project_name: str, url: str, github_name: str, \
         github_username: str, email: str, username: str, pmu: str, \
-            is_web_root: bool, project_path: str, has_gunicorn_service: bool, *args) -> None:
+            is_web_root: bool, project_path: str, gunicorn_service_port: int, *args) -> None:
         
         # Run only as 'sudo' or 'root'
         if os.geteuid() > 0:
@@ -34,7 +34,12 @@ class SiteBuilder():
         self.pmu = pmu
         self.is_web_root = is_web_root
         self.project_path = project_path
-        self.has_gunicorn_service = has_gunicorn_service
+        # Value of zero for service port means there is no Gunicorn service
+        if gunicorn_service_port == 0:
+            self.has_gunicorn_service = False
+        else:
+            self.has_gunicorn_service = True
+            self.gunicorn_service_port = gunicorn_service_port
         if len(args) == 0:
             self.has_reCAPTCHAv3 = False
         elif len(args) == 2:
@@ -129,37 +134,59 @@ FLUSH PRIVILEGES;
     # Create NGINX configuration files for domain, subdomains and http-to-https forwarding
     # Include SSL certificate locations as needed, using the get_ssl function
     def nginx_conf(self) -> None:
-        # Create conf file for http-to-https forwarding on initial site creation
-        if self.is_web_root:
-            secure_conf="""server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name _;
-    return 301 https://$host$request_uri;
-}"""
-            SiteBuilder.new_file(secure_conf, os.path.join(self.nginx_conf_path, "secure.conf"))
         
         # Only create a conf file on the development server for socket connections
         if self.development:
+            if self.is_web_root:
+                # Include any locations for services
+                secure_conf="""server {{
+    listen localhost:80;
+    location / {{
+        root {0};
+    }}
+    include conf.d/services/*;
+}}""".format(self.nginx_html_path)
+                SiteBuilder.new_file(secure_conf, os.path.join(self.nginx_conf_path, "root.conf"))
+                # Createa directory for services if it doesn't exist
+                if not os.path.exists(os.path.join(self.nginx_conf_path, "services")):
+                    os.mkdir(os.path.join(self.nginx_conf_path, "services"))
             if self.has_gunicorn_service:
                 conf="""server {{
-    listen 80;
-    server_name {0};
-    access_log /var/log/nginx/access.log;
-    error_log /var/log/nginx/error.log;
-    root {1};
+    listen localhost:{0};
         
     location / {{
-        proxy_pass http://unix:/usr/share/nginx/sockets/{2}.sock;
+        proxy_pass http://unix:/usr/share/nginx/sockets/{1}.sock;
         proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }}
-}}
-""".format(self.project_name, self.html_path, self.project_name)
+}}""".format(self.gunicorn_service_port, self.project_name)
                 SiteBuilder.new_file(conf, os.path.join(self.nginx_conf_path, self.project_name + ".conf"))
+                # Forward to service using a proxy when accessing subpath
+                location="""location /{0}/ {{
+    proxy_pass http://localhost:{1}/;
+}}""".format(self.project_name, self.gunicorn_service_port)
+                SiteBuilder.new_file(location, os.path.join(self.nginx_conf_path, "services", self.project_name))
         else:
+            
+            if self.is_web_root:
+                # Create conf file for http-to-https forwarding on initial site creation
+                secure_conf="""server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+    return 301 https://$host$request_uri;
+    }"""
+                SiteBuilder.new_file(secure_conf, os.path.join(self.nginx_conf_path, "secure.conf"))
+                # Include files for accessing srevices through subpaths (if they exist)
+                service_includes_line="include conf.d/services/*;"
+                # Createa directory for services if it doesn't exist
+                if not os.path.exists(os.path.join(self.nginx_conf_path, "services")):
+                    os.mkdir(os.path.join(self.nginx_conf_path, "services"))
+            else:
+                service_includes_line=""
+
             # Get SSL certificate
             certificate_path, key_path = SiteBuilder.get_ssl(self.email, self.url)
             # Connect to socket if using a systemd service like GUNICORN
@@ -169,8 +196,6 @@ FLUSH PRIVILEGES;
     server_name {0};
     ssl_certificate {1};
     ssl_certificate_key {2};
-    access_log /var/log/nginx/access.log;
-    error_log /var/log/nginx/error.log;
     root {3};
         
     location / {{
@@ -182,6 +207,11 @@ FLUSH PRIVILEGES;
     }}
 }}
 """.format(self.url, certificate_path, key_path, self.html_path, self.project_name)
+                # Forward to service using a proxy when accessing subpath
+                location = """location /{0}/ {{
+    proxy_pass  https://{1}/;
+}}""".format(self.project_name, self.url)
+                SiteBuilder.new_file(location, os.path.join(self.nginx_conf_path, "services", self.project_name))
             # Normal setup (No socket, SSL certificates, 2 conf files [reg. and www]):
             else:
                 conf="""server {{
@@ -189,8 +219,6 @@ FLUSH PRIVILEGES;
     server_name {0};
     ssl_certificate {1};
     ssl_certificate_key {2};
-    access_log /var/log/nginx/access.log;
-    error_log /var/log/nginx/error.log;
     root {3};
     
     location / {{
@@ -204,8 +232,10 @@ FLUSH PRIVILEGES;
         fastcgi_param   SCRIPT_FILENAME	$document_root$fastcgi_script_name;
         fastcgi_param   SCRIPT_NAME	$fastcgi_script_name;
     }}
+
+    {4}
 }}
-""".format(self.url, certificate_path, key_path, self.html_path)
+""".format(self.url, certificate_path, key_path, self.html_path, service_includes_line)
             SiteBuilder.new_file(conf, self.nginx_domain_path)
             
             certificate_path_www, key_path_www = SiteBuilder.get_ssl(self.email, self.www_url)

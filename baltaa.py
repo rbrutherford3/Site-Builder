@@ -25,7 +25,7 @@ def main(development: bool):
         project_root = ""
     baltaa = BaltAA(project_name, url, "Baltimore-AA", \
         "rbrutherford3", "robbie.rutherford@gmail.com", username, pmu,
-        False, project_root, False)
+        False, project_root, 0)
     print("### Cloning repository ###")
     baltaa.get_paths()
     baltaa.clone()
