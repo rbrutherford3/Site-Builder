@@ -81,18 +81,12 @@ class SiteBuilder():
     # Clone project from GitHub
     def clone(self) -> None:
         if os.path.exists(self.project_path):
-            if os.path.isdir(self.project_path):
-                SiteBuilder.delete_dir(self.project_path)
-            else:
-                os.remove(self.project_path)
+            SiteBuilder.delete_descend(self.project_path)
         os.system("git clone " + self.git_url + " " + self.project_path)
         # Symlink from HTML directory to project path
         if self.has_symlink:   # maybe change
             if os.path.exists(self.html_path):
-                if os.path.isdir(self.html_path):
-                    SiteBuilder.delete_dir(self.html_path)
-                else:
-                    os.remove(self.html_path)
+                SiteBuilder.delete_descend(self.html_path)
             os.system("ln -s " + self.project_path + " " + self.html_path)
 
     # Create a PHP file for storing database credentials
@@ -333,12 +327,16 @@ WantedBy=multi-user.target
             else:
                 shutil.copy2(item_src, item_dst)
 
-    def delete_dir(top: str):
+    def delete_descend(top: str):
         for root, dirs, files in os.walk(top, topdown=False):
             for name in files:
                 os.remove(os.path.join(root, name))
             for name in dirs:
-                os.rmdir(os.path.join(root, name))
+                path = os.path.join(root, name)
+                if os.path.islink(path):
+                    os.remove(path)
+                else:
+                    os.rmdir(path)
 
     # Kick out the jams
     def finalize(self) -> None:
