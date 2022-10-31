@@ -141,8 +141,17 @@ FLUSH PRIVILEGES;
                 # Include any locations for services
                 secure_conf="""server {{
     listen localhost:80;
+    root {0};
     location / {{
-        root {0};
+        index           index.html index.htm index.php;
+    }}
+    
+    location ~* \.php$ {{
+        fastcgi_pass	unix:/var/run/php/php-fpm.sock;
+        fastcgi_index   index.php;
+        include		    fastcgi_params;
+        fastcgi_param   SCRIPT_FILENAME	$document_root$fastcgi_script_name;
+        fastcgi_param   SCRIPT_NAME	$fastcgi_script_name;
     }}
     include conf.d/services/*;
 }}""".format(self.nginx_html_path)
