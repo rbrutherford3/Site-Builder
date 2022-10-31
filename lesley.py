@@ -12,6 +12,8 @@ class Lesley(SiteBuilder):
     # Install PHP-Imagick
     def install(self, aws: bool) -> None:
         os.system(self.pmu + " install php-imagick -y")
+        if not aws:
+            os.system(self.pmu + " install libmagickcore-6* -y")
         os.system("systemctl restart php-fpm")
 
 def main(development: bool):
