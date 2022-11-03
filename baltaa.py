@@ -6,6 +6,7 @@ import sys
 from sitebuilder import SiteBuilder
 from passwords import Passwords
 from recaptchav3 import reCAPTCHAv3
+from config import Config
 
 class BaltAA(SiteBuilder):
     pass
@@ -14,18 +15,18 @@ def main(development: bool):
     print("### Initiating \"Baltimore AA\" site installation ###")
     project_name = "baltaa"
     if development:
-        url = ""
-        username = "robbie9485"
-        pmu = "apt"
-        project_root = os.path.join("/home", username, "Development", project_name)
+        url = None
+        username = Config.local_username
+        pmu = Config.local_pmu
+        project_root = os.path.join(Config.local_development_root, project_name)
     else:
-        url = project_name + ".spiffindustries.com"
-        username = "ec2-user"
-        pmu = "yum"
-        project_root = ""
+        url = project_name + "." + Config.url
+        username = Config.server_username
+        pmu = Config.server_pmu
+        project_root = None
     baltaa = BaltAA(project_name, url, "Baltimore-AA", \
-        "rbrutherford3", "robbie.rutherford@gmail.com", username, pmu,
-        False, project_root, 0)
+        Config.github_username, Config.email, username, pmu,
+        False, project_root, None)
     print("### Cloning repository ###")
     baltaa.get_paths()
     baltaa.clone()

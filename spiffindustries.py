@@ -2,6 +2,7 @@
 
 import sys
 from sitebuilder import SiteBuilder
+from config import Config
 
 class SpiffIndustries(SiteBuilder):
     pass
@@ -9,16 +10,16 @@ class SpiffIndustries(SiteBuilder):
 def main(development):
     print("### Initiating \"Spiff Industries\" site installation ###")
     if development:
-        url = ""
-        username = "robbie9485"
-        pmu = "apt"
+        url = None
+        username = Config.local_username
+        pmu = Config.local_pmu
     else:
-        url = "spiffindustries.com"
-        username = "ec2-user"
-        pmu = "yum"
+        url = Config.url
+        username = Config.server_username
+        pmu = Config.server_pmu
     spiffindustries = SpiffIndustries("spiffindustries", url, "Spiff-Industries-Website", \
-        "rbrutherford3", "robbie.rutherford@gmail.com", username, pmu,
-        True, "", 0)
+        Config.github_username, Config.email, username, pmu,
+        True, None, None)
     spiffindustries.install(not development)
     spiffindustries.get_paths()
     spiffindustries.clone()

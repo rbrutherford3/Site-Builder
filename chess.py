@@ -4,6 +4,7 @@ import os
 import sys
 
 from sitebuilder import SiteBuilder
+from config import Config
 
 class Chess(SiteBuilder):
 
@@ -17,17 +18,17 @@ def main(development: bool):
     print("### Initiating \"ASCII Chess\" site installation ###")
     project_name = "chess"
     if development:
-        url = ""
-        username = "robbie9485"
-        pmu = "apt"
-        project_root = os.path.join("/home", username, "Development", project_name)
+        url = None
+        username = Config.local_username
+        pmu = Config.local_pmu
+        project_root = os.path.join(Config.local_development_root, project_name)
     else:
-        url = project_name + ".spiffindustries.com"
-        username = "ec2-user"
-        pmu = "yum"
-        project_root = ""
+        url = project_name + "." + Config.url
+        username = Config.server_username
+        pmu = Config.server_pmu
+        project_root = None
     chess = Chess(project_name, url, "ASCII-Chess", \
-        "rbrutherford3", "robbie.rutherford@gmail.com", username, pmu,
+        Config.github_username, Config.email, username, pmu,
         False, project_root, 5000)
     chess.install(not development)
     chess.get_paths()

@@ -24,7 +24,10 @@ class SiteBuilder():
         # Save variables
         self.project_name = project_name
         self.url = url
-        self.www_url = "www." + url
+        if self.url is None:
+            self.www_url = None
+        else:
+            self.www_url = "www." + url
         self.github_name = github_name
         self.github_username = github_username
         self.git_url = self.github_url + github_username + "/" + github_name
@@ -35,7 +38,7 @@ class SiteBuilder():
         self.is_web_root = is_web_root
         self.project_path = project_path
         # Value of zero for service port means there is no Gunicorn service
-        if gunicorn_service_port == 0:
+        if gunicorn_service_port is None:
             self.has_gunicorn_service = False
         else:
             self.has_gunicorn_service = True
@@ -50,7 +53,7 @@ class SiteBuilder():
             print("Invalid number of arguments")
             exit()
 
-        if len(self.url) == 0:
+        if self.url is None:
             self.development = True
         else:
             self.development = False
@@ -77,7 +80,7 @@ class SiteBuilder():
             self.html_path = os.path.join(self.nginx_html_path, self.project_name)
 
         # If a project path is provided, a symlink is needed:
-        if len(self.project_path) == 0:
+        if self.project_path is None:
             self.has_symlink = False
             self.project_path = self.html_path
         else:
@@ -337,6 +340,7 @@ WantedBy=multi-user.target
         os.system("systemctl restart mariadb")
         os.system(self.pmu + " install php-fpm -y")
         os.system("systemctl restart php-fpm")
+        os.system(self.pmu + " install php-mysql -y")
         os.system(self.pmu + " install php-curl -y")
         os.system(self.pmu + " install git -y") # Install Git
         # Install Python3 and PIP package manager
@@ -348,7 +352,7 @@ WantedBy=multi-user.target
         # Install certbot (aka letsencrypt) for SSL certificates
         if aws:
             os.system("amazon-linux-extras install epel -y")
-        os.system(self.pmu + " install certbot-nginx -y")
+            os.system(self.pmu + " install certbot-nginx -y")
 
     # Install a PIP component on both user and root for systemd service purposes
     def pip_install(self, component):

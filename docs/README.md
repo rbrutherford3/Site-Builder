@@ -33,19 +33,37 @@ To install the repository, simply clone it:
 git clone https://github.com/rbrutherford3/Site-Builder.git
 ```
 
-There are two dependent Python files that are omitted from this repository:
+There are three dependent Python files that are omitted from this repository:
 
+- `config.py`
 - `passwords.py`
 - `recaptchav3.py`
 
-Create each of these files in the root directory of the project, replacing the values with your own.
+Create each of these files in the root directory of the project, [mostly] replacing the values with your own.
+
+`config.py`:
+```
+#!/bin/python3
+import os
+
+# Class for storing personal configurations
+class Config:
+    local_username = "your-username"
+    local_pmu = "apt"
+    local_development_root = os.path.join("/", "home", local_username, "Development")
+    server_username = "ec2-user"
+    server_pmu = "yum"
+    url = "yourdomain.com"                  # Originally spiffindustries.com
+    github_username = "rbrutherford3"       # Keep this if you wish to use the original repositories
+    email = "your.email@gmail.com"          # Relevant for domain encryption certification registration
+```
 
 `passwords.py`:
 
 ```
 #!/bin/python3
 
-# Class for storing passwords
+# Class for storing MySQL passwords
 class Passwords:
     baltaa_password = "password"
     lesley_password = "password"
@@ -64,19 +82,19 @@ class reCAPTCHAv3:
     aws_secret_key = "GOOGLE_RECAPTCHA_V3_SECRET_KEY_2"
 ```
 
-Note that, without these files, the installations `lesley.py` and `baltaa.py` will fail.  Some installations include supporting files, such as `.sql` database installations that are required to set the site up for initial use.
+Note that, without these files, all installations will fail.  Some installations also include supporting files, such as `.sql` database installations that are required to set the site up for initial use.
 
 ## Usage
 
-To install the Spiff Industries website on a server, simply run `site.py` as root:
+To install the Spiff Industries website with all it's components on a server, simply run `all.py` as root:
 ```
-sudo python3 site.py
+sudo python3 all.py
 ```
 If installing on a development server, use the `--debug` or `-d` option:
 ```
-sudo python3 site.py --debug
+sudo python3 all.py --debug
 ```
-Note that each module has its own installation, including the root module which inludes all the root HTML files.  `site.py` invokes all of these modules separately.  If you wish to be more selective, you can run scripts indvidually, instead.  They are:
+Note that each module has its own installation, including the root module `spiffindustries.py` which includes all the root HTML files.  `all.py` invokes all of these modules separately.  If you wish to be more selective, you can run scripts individually, instead.  They are:
 
 - `spiffindustries.py`
 - `baltaa.py`
