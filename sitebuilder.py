@@ -92,7 +92,7 @@ class SiteBuilder():
             SiteBuilder.delete_descend(self.project_path)
         os.system("git clone " + self.git_url + " " + self.project_path)
         # Symlink from HTML directory to project path
-        if self.has_symlink:   # maybe change
+        if self.has_symlink:
             if os.path.exists(self.html_path):
                 SiteBuilder.delete_descend(self.html_path)
             os.system("ln -s " + self.project_path + " " + self.html_path)
@@ -371,15 +371,19 @@ WantedBy=multi-user.target
                 shutil.copy2(item_src, item_dst)
 
     def delete_descend(top: str):
-        for root, dirs, files in os.walk(top, topdown=False):
-            for name in files:
-                os.remove(os.path.join(root, name))
-            for name in dirs:
-                path = os.path.join(root, name)
-                if os.path.islink(path):
-                    os.remove(path)
-                else:
-                    os.rmdir(path)
+        if os.path.isdir(top):
+            for root, dirs, files in os.walk(top, topdown=False):
+                for name in files:
+                    os.remove(os.path.join(root, name))
+                for name in dirs:
+                    path = os.path.join(root, name)
+                    if os.path.islink(path):
+                        os.remove(path)
+                    else:
+                        os.rmdir(path)
+            os.rmdir(top)
+        else:
+            os.remove(top)
 
     # Kick out the jams
     def finalize(self) -> None:
