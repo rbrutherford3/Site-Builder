@@ -100,6 +100,7 @@ Note that each module has its own installation, including the root module `spiff
 - `baltaa.py`
 - `chess.py`
 - `lesley.py`
+- `docxpublisher.py`
 
 Each script also has the debug option available, if desired.
 

@@ -4,6 +4,7 @@ from spiffindustries import main as spiffindustries_main
 from baltaa import main as baltaa_main
 from chess import main as chess_main
 from lesley import main as lesley_main
+from docxpublisher import main as docxpublisher_main
 
 def main(development: bool):
     if development:
@@ -11,11 +12,13 @@ def main(development: bool):
         baltaa_main(True)
         chess_main(True)
         lesley_main(True)
+        docxpublisher_main(True)
     else:
         spiffindustries_main(False)
         baltaa_main(False)
         chess_main(False)
         lesley_main(False)
+        docxpublisher_main(False)
         
 if __name__ == '__main__':
     if len(sys.argv) > 1:
