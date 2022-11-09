@@ -35,7 +35,10 @@ def main(development: bool):
     print("### Cloning repository ###")
     pdfPublisher.clone()
     print("### Creating systemd service ###")
-    pdfPublisher.gunicorn("Gunicorn service for PDF Publisher")
+    if development:
+        pdfPublisher.gunicorn(Config.local_username, "Gunicorn service for PDF Publisher")
+    else:
+        pdfPublisher.gunicorn("nginx", "Gunicorn service for PDF Publisher")
     pdfPublisher.nginx_conf()
     print("### Finalizing ###")
     pdfPublisher.finalize()

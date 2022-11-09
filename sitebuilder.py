@@ -78,6 +78,20 @@ class SiteBuilder():
             self.html_path = self.nginx_html_path
         else:
             self.html_path = os.path.join(self.nginx_html_path, self.project_name)
+        
+        # Find NGINX Socket path, or make it
+        nginx_socket_path_1 = "/usr/share/nginx/sockets"
+        nginx_socket_path_2 = "/var/www/sockets"
+        if os.path.exists(nginx_socket_path_1):
+            self.nginx_socket_path = nginx_socket_path_1
+        elif os.path.exists(nginx_socket_path_2):
+            self.nginx_socket_path = nginx_socket_path_2
+        elif self.nginx_html_path.startswith("/usr/share/nginx"):
+            os.mkdir(nginx_socket_path_1)
+            self.nginx_socket_path = nginx_socket_path_1
+        else:
+            os.mkdir(nginx_socket_path_2)
+            self.nginx_socket_path = nginx_socket_path_2            
 
         # If a project path is provided, a symlink is needed:
         if self.project_path is None:
@@ -297,7 +311,7 @@ FLUSH PRIVILEGES;
         return certificate_path, key_path
 
     # Createa a gunicorn systemd file and install it
-    def gunicorn(self, description: str) -> None:
+    def gunicorn(self, user: str, description: str) -> None:
 
         data = subprocess.run("runuser -l " + self.username + " -c 'which gunicorn'", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         gunicorn_path = data.stdout.decode().replace("\n","")
@@ -307,16 +321,16 @@ Description={0}
 After=network.target
 
 [Service]
-User=root
-Group=root
-WorkingDirectory={1}
+User={1}
+Group={1}
+WorkingDirectory={2}
 Environment="PATH=cd"
-ExecStart={2} --workers=5 --threads=2 --bind=unix:/usr/share/nginx/sockets/{3}.sock app:app
+ExecStart={3} --workers=5 --threads=2 --bind=unix:{4} app:app
 
 [Install]
 WantedBy=multi-user.target
 """
-        service = service.format(description, self.project_path, gunicorn_path, self.project_name)
+        service = service.format(description, user, self.project_path, gunicorn_path, os.path.join(self.nginx_socket_path, self.project_name + ".sock"))
         SiteBuilder.new_file(service, os.path.join("/etc/systemd/system/", service_name))
         os.system("systemctl daemon-reload")
         os.system("systemctl enable " + service_name)
@@ -389,8 +403,11 @@ WantedBy=multi-user.target
     def finalize(self) -> None:
         if self.has_symlink:
             os.system("chown -R " + self.username + ":" + self.username + " " + self.project_path)
-        if not self.development:
+        if self.development:
+            os.system("chmod -R og+w " + self.nginx_socket_path)
+        else:
             os.system("chown -R nginx:nginx " + self.html_path)
+            os.system("chown -R nginx:nginx " + self.nginx_socket_path)
         if self.has_gunicorn_service:
             os.system("systemctl restart " + self.project_name)
         os.system("systemctl restart nginx")

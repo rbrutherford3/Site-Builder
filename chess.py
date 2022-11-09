@@ -35,7 +35,10 @@ def main(development: bool):
     print("### Cloning repository ###")
     chess.clone()
     print("### Creating systemd service ###")
-    chess.gunicorn("Gunicorn service for ASCII chess game")
+    if development:
+        chess.gunicorn(Config.local_username, "Gunicorn service for ASCII chess game")
+    else:
+        chess.gunicorn("nginx", "Gunicorn service for ASCII chess game")
     #if not debug:  # TBD
     #    print("### Configuring chess.spiffindustries.com on NGINX ###")
     #    chess.nginx_conf()
