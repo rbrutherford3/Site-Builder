@@ -4,7 +4,7 @@ import os, sys
 from sitebuilder import SiteBuilder
 from config import Config
 
-class DocXPublisher(SiteBuilder):
+class PDFPublisher(SiteBuilder):
     def install(self, aws: bool) -> None:
         if aws:
             os.system("amazon-linux-extras install libreoffice -y")
@@ -12,10 +12,11 @@ class DocXPublisher(SiteBuilder):
             os.system(self.pmu + " install libreoffice -y")
         os.system("pip3 install PyPDF2")
         os.system("pip3 install FPDF")
+        os.system("pip3 install pdf.tocgen")
 
 def main(development: bool):
-    print("### Initiating \"docX Publisher\" site installation ###")
-    project_name = "docxpublisher"
+    print("### Initiating \"PDF Publisher\" site installation ###")
+    project_name = "pdfpublisher"
     if development:
         url = None
         username = Config.local_username
@@ -26,18 +27,18 @@ def main(development: bool):
         username = Config.server_username
         pmu = Config.server_pmu
         project_root = None
-    docxPublisher = DocXPublisher(project_name, url, "docx-Publisher", \
+    pdfPublisher = PDFPublisher(project_name, url, "PDF-Publisher", \
         Config.github_username, Config.email, username, pmu,
         False, project_root, 5001)
-    docxPublisher.install(not development)
-    docxPublisher.get_paths()
+    pdfPublisher.install(not development)
+    pdfPublisher.get_paths()
     print("### Cloning repository ###")
-    docxPublisher.clone()
+    pdfPublisher.clone()
     print("### Creating systemd service ###")
-    docxPublisher.gunicorn("Gunicorn service for docX Publisher")
-    docxPublisher.nginx_conf()
+    pdfPublisher.gunicorn("Gunicorn service for PDF Publisher")
+    pdfPublisher.nginx_conf()
     print("### Finalizing ###")
-    docxPublisher.finalize()
+    pdfPublisher.finalize()
     print("### Finished! ###")
 
 if __name__ == '__main__':
