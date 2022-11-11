@@ -36,13 +36,13 @@ def main(development: bool):
     chess.clone()
     print("### Creating systemd service ###")
     if development:
-        chess.gunicorn(Config.local_username, "Gunicorn service for ASCII chess game")
+        chess.gunicorn(Config.local_username, "Gunicorn service for ASCII chess game", False)
     else:
-        chess.gunicorn("nginx", "Gunicorn service for ASCII chess game")
+        chess.gunicorn("nginx", "Gunicorn service for ASCII chess game", False)
     #if not debug:  # TBD
     #    print("### Configuring chess.spiffindustries.com on NGINX ###")
     #    chess.nginx_conf()
-    chess.nginx_conf(True, False, 5000)
+    chess.nginx_conf(True, project_name, False, 5000)
     print("### Finalizing ###")
     chess.finalize()
     os.system("systemctl restart " + project_name)

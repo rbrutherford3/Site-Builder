@@ -36,10 +36,10 @@ def main(development: bool):
     pdfPublisher.clone()
     print("### Creating systemd service ###")
     if development:
-        pdfPublisher.gunicorn(Config.local_username, "Gunicorn service for PDF Publisher")
+        pdfPublisher.gunicorn(Config.local_username, "Gunicorn service for PDF Publisher", False)
     else:
-        pdfPublisher.gunicorn("nginx", "Gunicorn service for PDF Publisher")
-    pdfPublisher.nginx_conf(True, False, 5001)
+        pdfPublisher.gunicorn("nginx", "Gunicorn service for PDF Publisher", False)
+    pdfPublisher.nginx_conf(True, project_name, False, 5001)
     print("### Finalizing ###")
     pdfPublisher.finalize()
     os.system("systemctl restart " + project_name)

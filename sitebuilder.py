@@ -135,7 +135,7 @@ FLUSH PRIVILEGES;
 
     # Create NGINX configuration files for domain, subdomains and http-to-https forwarding
     # Include SSL certificate locations as needed, using the get_ssl function
-    def nginx_conf(self, gunicorn: bool, django: bool = False, port: int = None) -> None:
+    def nginx_conf(self, gunicorn: bool, system_service: str = None, django: bool = False, port: int = None) -> None:
         
         # Only create a conf file on the development server for socket connections
         if self.development:
@@ -178,7 +178,7 @@ FLUSH PRIVILEGES;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }}
-}}""".format(port, staticline, self.project_name)
+}}""".format(port, staticline, system_service)
                 SiteBuilder.new_file(conf, os.path.join(self.nginx_conf_path, self.project_name + ".conf"))
                 # Forward to service using a proxy when accessing subpath
                 location="""location /{0}/ {{
@@ -229,7 +229,7 @@ FLUSH PRIVILEGES;
         proxy_set_header X-Forwarded-Proto $scheme;
     }}
 }}
-""".format(self.url, certificate_path, key_path, self.html_path, staticline, self.project_name)
+""".format(self.url, certificate_path, key_path, self.html_path, staticline, system_service)
                 # Forward to service using a proxy when accessing subpath
                 location = """location /{0}/ {{
     proxy_pass  https://{1}/;
@@ -308,7 +308,7 @@ FLUSH PRIVILEGES;
         return certificate_path, key_path
 
     # Createa a gunicorn systemd file and install it
-    def gunicorn(self, user: str, description: str) -> None:
+    def gunicorn(self, user: str, description: str, django: bool) -> None:
 
         data = subprocess.run("runuser -l " + self.username + " -c 'which gunicorn'", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         gunicorn_path = data.stdout.decode().replace("\n","")
@@ -322,12 +322,16 @@ User={1}
 Group={1}
 WorkingDirectory={2}
 Environment="PATH=cd"
-ExecStart={3} --workers=5 --threads=2 --bind=unix:{4} app:app
+ExecStart={3} --workers=5 --threads=2 --bind=unix:{4} {5}
 
 [Install]
 WantedBy=multi-user.target
 """
-        service = service.format(description, user, self.project_path, gunicorn_path, os.path.join(self.nginx_socket_path, self.project_name + ".sock"))
+        if django:
+            service_line = self.project_name + ".wsgi:application"
+        else:
+            service_line = "app:app"
+        service = service.format(description, user, self.project_path, gunicorn_path, os.path.join(self.nginx_socket_path, self.project_name + ".sock"), service_line)
         SiteBuilder.new_file(service, os.path.join("/etc/systemd/system/", service_name))
         os.system("systemctl daemon-reload")
         os.system("systemctl enable " + service_name)
@@ -357,6 +361,7 @@ WantedBy=multi-user.target
         # Install Python3 and PIP package manager
         if aws:
             os.system("amazon-linux-extras install python3.8 -y")
+            os.system(self.pmu + " install python3-devel -y")
         else:
             os.system(self.pmu + " install python3 -y")
         os.system(self.pmu + " install python3-pip -y")
