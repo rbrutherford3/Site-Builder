@@ -26,7 +26,7 @@ def main(development: bool):
         project_root = None
     baltaa = BaltAA(project_name, url, "Baltimore-AA", \
         Config.github_username, Config.email, username, pmu,
-        False, project_root, None)
+        False, project_root)
     print("### Cloning repository ###")
     baltaa.get_paths()
     baltaa.clone()
@@ -63,7 +63,7 @@ def main(development: bool):
     BaltAA.new_file(recaptcha_php, os.path.join(baltaa.project_path, "lib", "credentialsrecaptchav3.php"))
     if not development:
         print("### Configuring baltaa.spiffindustries.com on NGINX ###")
-        baltaa.nginx_conf()
+        baltaa.nginx_conf(False)
     print("### Finalizing ###")
     baltaa.finalize()
     print("### Finished! ###")

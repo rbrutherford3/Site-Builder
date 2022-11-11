@@ -22,12 +22,12 @@ def main(development):
         project_root = None
     spiffindustries = SpiffIndustries(project_name, url, "Spiff-Industries-Website", \
         Config.github_username, Config.email, username, pmu,
-        True, project_root, None)
+        True, project_root)
     spiffindustries.install(not development)
     spiffindustries.get_paths()
     spiffindustries.clone()
     print("### Configuring NGINX ###")
-    spiffindustries.nginx_conf()
+    spiffindustries.nginx_conf(False)
     print("### Finalizing ###")
     spiffindustries.finalize()
     print("### Finished! ###")

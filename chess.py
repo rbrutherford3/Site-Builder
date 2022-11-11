@@ -29,7 +29,7 @@ def main(development: bool):
         project_root = None
     chess = Chess(project_name, url, "ASCII-Chess", \
         Config.github_username, Config.email, username, pmu,
-        False, project_root, 5000)
+        False, project_root)
     chess.install(not development)
     chess.get_paths()
     print("### Cloning repository ###")
@@ -42,9 +42,10 @@ def main(development: bool):
     #if not debug:  # TBD
     #    print("### Configuring chess.spiffindustries.com on NGINX ###")
     #    chess.nginx_conf()
-    chess.nginx_conf()
+    chess.nginx_conf(True, False, 5000)
     print("### Finalizing ###")
     chess.finalize()
+    os.system("systemctl restart " + project_name)
     print("### Finished! ###")
 
 if __name__ == '__main__':

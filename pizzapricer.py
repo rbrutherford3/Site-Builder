@@ -22,12 +22,13 @@ def main(development: bool):
         project_root = None
     pizzaPricer = PizzaPricer(project_name, url, "Pizza-Pricer", \
         Config.github_username, Config.email, username, pmu,
-        False, project_root, None)
+        False, project_root)
     pizzaPricer.get_paths()
     print("### Cloning repository ###")
     pizzaPricer.clone()
-    print("### Configuring NGINX ###")
-    pizzaPricer.nginx_conf()
+    if not development:
+        print("### Configuring pizzapricer.spiffindustries.com on NGINX ###")
+        pizzaPricer.nginx_conf(False)
     print("### Finalizing ###")
     pizzaPricer.finalize()
     print("### Finished! ###")

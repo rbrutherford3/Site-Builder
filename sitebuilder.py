@@ -14,7 +14,7 @@ class SiteBuilder():
     # Constructor
     def __init__(self, project_name: str, url: str, github_name: str, \
         github_username: str, email: str, username: str, pmu: str, \
-            is_web_root: bool, project_path: str, gunicorn_service_port: int, *args) -> None:
+            is_web_root: bool, project_path: str) -> None:
         
         # Run only as 'sudo' or 'root'
         if os.geteuid() > 0:
@@ -37,21 +37,6 @@ class SiteBuilder():
         self.pmu = pmu
         self.is_web_root = is_web_root
         self.project_path = project_path
-        # Value of zero for service port means there is no Gunicorn service
-        if gunicorn_service_port is None:
-            self.has_gunicorn_service = False
-        else:
-            self.has_gunicorn_service = True
-            self.gunicorn_service_port = gunicorn_service_port
-        if len(args) == 0:
-            self.has_reCAPTCHAv3 = False
-        elif len(args) == 2:
-            self.has_reCAPTCHAv3 = True
-            self.reCAPTCHAv3_site_key = args[0]
-            self.reCAPTCHAv3_secret_key = args[1]
-        else:
-            print("Invalid number of arguments")
-            exit()
 
         if self.url is None:
             self.development = True
@@ -150,7 +135,7 @@ FLUSH PRIVILEGES;
 
     # Create NGINX configuration files for domain, subdomains and http-to-https forwarding
     # Include SSL certificate locations as needed, using the get_ssl function
-    def nginx_conf(self) -> None:
+    def nginx_conf(self, gunicorn: bool, django: bool = False, port: int = None) -> None:
         
         # Only create a conf file on the development server for socket connections
         if self.development:
@@ -176,23 +161,29 @@ FLUSH PRIVILEGES;
                 # Createa directory for services if it doesn't exist
                 if not os.path.exists(os.path.join(self.nginx_conf_path, "services")):
                     os.mkdir(os.path.join(self.nginx_conf_path, "services"))
-            if self.has_gunicorn_service:
+            if gunicorn:
+                # Need a line to serve static files if this is a Django service
+                if django:
+                    staticline = "location /static {\n        alias " + os.path.join(self.nginx_html_path, "static") + \
+                        ";\n    }\n\n    "
+                else:
+                    staticline = ""
                 conf="""server {{
     listen localhost:{0};
-        
-    location / {{
-        proxy_pass http://unix:/usr/share/nginx/sockets/{1}.sock;
+
+    {1}location / {{
+        proxy_pass http://unix:/usr/share/nginx/sockets/{2}.sock;
         proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }}
-}}""".format(self.gunicorn_service_port, self.project_name)
+}}""".format(port, staticline, self.project_name)
                 SiteBuilder.new_file(conf, os.path.join(self.nginx_conf_path, self.project_name + ".conf"))
                 # Forward to service using a proxy when accessing subpath
                 location="""location /{0}/ {{
     proxy_pass http://localhost:{1}/;
-}}""".format(self.project_name, self.gunicorn_service_port)
+}}""".format(self.project_name, port)
                 SiteBuilder.new_file(location, os.path.join(self.nginx_conf_path, "services", self.project_name))
         else:
             
@@ -216,7 +207,13 @@ FLUSH PRIVILEGES;
             # Get SSL certificate
             certificate_path, key_path = SiteBuilder.get_ssl(self.email, self.url)
             # Connect to socket if using a systemd service like GUNICORN
-            if self.has_gunicorn_service:
+            if gunicorn:
+                # Need a line to serve static files if this is a Django service
+                if django:
+                    staticline = "location /static {\n        alias " + os.path.join(self.nginx_html_path, "static") + \
+                        ";\n    }\n\n    "
+                else:
+                    staticline = ""
                 conf="""server {{
     listen 443 ssl http2;
     server_name {0};
@@ -224,15 +221,15 @@ FLUSH PRIVILEGES;
     ssl_certificate_key {2};
     root {3};
         
-    location / {{
-        proxy_pass http://unix:/usr/share/nginx/sockets/{4}.sock;
+    {4}location / {{
+        proxy_pass http://unix:/usr/share/nginx/sockets/{5}.sock;
         proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }}
 }}
-""".format(self.url, certificate_path, key_path, self.html_path, self.project_name)
+""".format(self.url, certificate_path, key_path, self.html_path, staticline, self.project_name)
                 # Forward to service using a proxy when accessing subpath
                 location = """location /{0}/ {{
     proxy_pass  https://{1}/;
@@ -276,7 +273,7 @@ FLUSH PRIVILEGES;
             SiteBuilder.new_file(conf_www, self.nginx_domain_path_www)
         
         # Create a socket path if it doesn't exist
-        if self.has_gunicorn_service:
+        if gunicorn:
             if not os.path.exists("/usr/share/nginx/sockets"):
                 os.mkdir("/usr/share/nginx/sockets")
 
@@ -367,6 +364,11 @@ WantedBy=multi-user.target
         if aws:
             os.system("amazon-linux-extras install epel -y")
             os.system(self.pmu + " install certbot-nginx -y")
+        # Install Django and MySQL components
+        self.pip_install("django")
+        self.pip_install("mysqlclient")
+        if not aws:
+            os.system(self.pmu + " install libmysqlclient-dev")
 
     # Install a PIP component on both user and root for systemd service purposes
     def pip_install(self, component):
@@ -408,6 +410,4 @@ WantedBy=multi-user.target
         else:
             os.system("chown -R nginx:nginx " + self.html_path)
             os.system("chown -R nginx:nginx " + self.nginx_socket_path)
-        if self.has_gunicorn_service:
-            os.system("systemctl restart " + self.project_name)
         os.system("systemctl restart nginx")

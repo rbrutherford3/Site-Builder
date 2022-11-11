@@ -32,7 +32,7 @@ def main(development: bool):
         project_root = None
     lesley = Lesley(project_name, url, "Lesley-Paige-Art", \
         Config.github_username, Config.email, username, pmu,
-        False, project_root, None)
+        False, project_root)
     lesley.install(not development)
     lesley.get_paths()
     print("### Cloning repository ###")
@@ -70,7 +70,7 @@ def main(development: bool):
     Lesley.new_file(recaptcha_php, os.path.join(lesley.project_path, "admin", "credentialsrecaptchav3.php"))
     if not development:
         print("### Configuring lesley.spiffindustries.com on NGINX ###")
-        lesley.nginx_conf()
+        lesley.nginx_conf(False)
     print("### Finalizing ###")
     lesley.finalize()
     # Change folder permissions to allow writing new images as admin

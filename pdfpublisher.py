@@ -29,7 +29,7 @@ def main(development: bool):
         project_root = None
     pdfPublisher = PDFPublisher(project_name, url, "PDF-Publisher", \
         Config.github_username, Config.email, username, pmu,
-        False, project_root, 5001)
+        False, project_root)
     pdfPublisher.install(not development)
     pdfPublisher.get_paths()
     print("### Cloning repository ###")
@@ -39,9 +39,10 @@ def main(development: bool):
         pdfPublisher.gunicorn(Config.local_username, "Gunicorn service for PDF Publisher")
     else:
         pdfPublisher.gunicorn("nginx", "Gunicorn service for PDF Publisher")
-    pdfPublisher.nginx_conf()
+    pdfPublisher.nginx_conf(True, False, 5001)
     print("### Finalizing ###")
     pdfPublisher.finalize()
+    os.system("systemctl restart " + project_name)
     print("### Finished! ###")
 
 if __name__ == '__main__':
