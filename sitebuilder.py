@@ -230,11 +230,13 @@ FLUSH PRIVILEGES;
     }}
 }}
 """.format(self.url, certificate_path, key_path, self.html_path, staticline, system_service)
+                # Disabling Django subpaths until more work can be done
+                if not django:
                 # Forward to service using a proxy when accessing subpath
-                location = """location /{0}/ {{
+                    location = """location /{0}/ {{
     proxy_pass  https://{1}/;
 }}""".format(self.project_name, self.url)
-                SiteBuilder.new_file(location, os.path.join(self.nginx_conf_path, "services", self.project_name))
+                    SiteBuilder.new_file(location, os.path.join(self.nginx_conf_path, "services", self.project_name))
             # Normal setup (No socket, SSL certificates, 2 conf files [reg. and www]):
             else:
                 conf="""server {{
@@ -353,15 +355,15 @@ WantedBy=multi-user.target
             os.system(self.pmu + " install mariadb-server -y")
         os.system("systemctl restart nginx")
         os.system("systemctl restart mariadb")
-        os.system(self.pmu + " install php-fpm -y")
-        os.system("systemctl restart php-fpm")
-        os.system(self.pmu + " install php-mysql -y")
-        os.system(self.pmu + " install php-curl -y")
+        if not aws:
+            os.system(self.pmu + " install php-fpm -y")
+            os.system("systemctl restart php-fpm")
+            os.system(self.pmu + " install php-mysql -y")
+            os.system(self.pmu + " install php-curl -y")
         os.system(self.pmu + " install git -y") # Install Git
         # Install Python3 and PIP package manager
         if aws:
             os.system("amazon-linux-extras install python3.8 -y")
-            os.system(self.pmu + " install python3-devel -y")
         else:
             os.system(self.pmu + " install python3 -y")
         os.system(self.pmu + " install python3-pip -y")
@@ -371,9 +373,16 @@ WantedBy=multi-user.target
             os.system(self.pmu + " install certbot-nginx -y")
         # Install Django and MySQL components
         self.pip_install("django")
+        # Install mysqlclient prerequistites
+        if aws:
+            os.system(self.pmu + " install python3-devel -y")
+            os.system(self.pmu + " install mysql-devel -y")
+            os.system(self.pmu + " install gcc -y")
         self.pip_install("mysqlclient")
         if not aws:
             os.system(self.pmu + " install libmysqlclient-dev")
+        self.pip_install("gunicorn")
+        self.pip_install("django-crispy-forms")
 
     # Install a PIP component on both user and root for systemd service purposes
     def pip_install(self, component):

@@ -1,8 +1,9 @@
 #!/bin/python3
 
-import os, sys
+import os, sys, shutil
 from sitebuilder import SiteBuilder
 from config import Config
+from passwords import Passwords
 
 class SpiffIndustries(SiteBuilder):
     pass
@@ -25,11 +26,28 @@ def main(development):
         True, project_root)
     spiffindustries.install(not development)
     spiffindustries.get_paths()
+    print("### Cloning repository ###")
     spiffindustries.clone()
+    print("### Copying configuration file ###")
+    shutil.copy("spiffindustries_config.py", spiffindustries.project_path)
+    print("### Setting up database ###")
+    SpiffIndustries.run_sql(os.path.join(spiffindustries.project_path, "setup.sql"))
+    print("### Creating database user ###")
+    db_user_sql = SpiffIndustries.new_user_sql("SpiffIndustries", "spiff", Passwords.spiff_password, True)
+    db_user_sql_path = os.path.join(spiffindustries.html_path, "new_user.sql")
+    SpiffIndustries.new_file(db_user_sql, db_user_sql_path)
+    SpiffIndustries.run_sql(db_user_sql_path)
+    os.remove(db_user_sql_path)
+    print("### Creating systemd service ###")
+    if development:
+        spiffindustries.gunicorn(Config.local_username, "Gunicorn service for spiffindustries Django server", True)
+    else:
+        spiffindustries.gunicorn("nginx", "Gunicorn service for spiffindustries Django server", True)
     print("### Configuring NGINX ###")
     spiffindustries.nginx_conf(False)
     print("### Finalizing ###")
     spiffindustries.finalize()
+    os.system("systemctl restart " + project_name)
     print("### Finished! ###")
 
 if __name__ == '__main__':

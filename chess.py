@@ -11,7 +11,6 @@ class Chess(SiteBuilder):
     # Install Python3 web services
     def install(self, aws: bool) -> None:
         self.pip_install("flask")
-        self.pip_install("gunicorn")
         self.pip_install("jsonpickle")
 
 def main(development: bool):

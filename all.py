@@ -6,6 +6,7 @@ from chess import main as chess_main
 from lesley import main as lesley_main
 from pdfpublisher import main as pdfpublisher_main
 from pizzapricer import main as pizzapricer_main
+from taskmaster import main as taskmaster_main
 
 def main(development: bool):
     if development:
@@ -15,6 +16,7 @@ def main(development: bool):
         lesley_main(True)
         pdfpublisher_main(True)
         pizzapricer_main(True)
+        taskmaster_main(True)
     else:
         spiffindustries_main(False)
         baltaa_main(False)
@@ -22,6 +24,7 @@ def main(development: bool):
         lesley_main(False)
         pdfpublisher_main(False)
         pizzapricer_main(False)
+        taskmaster_main(False)
         
 if __name__ == '__main__':
     if len(sys.argv) > 1:
