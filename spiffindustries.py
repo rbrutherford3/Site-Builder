@@ -13,15 +13,17 @@ def main(development):
     project_name = "spiffindustries"
     if development:
         url = None
+        domain = None
         username = Config.local_username
         pmu = Config.local_pmu
         project_root = os.path.join(Config.local_development_root, project_name)
     else:
         url = Config.url
+        domain = Config.url
         username = Config.server_username
         pmu = Config.server_pmu
         project_root = None
-    spiffindustries = SpiffIndustries(project_name, url, "Spiff-Industries-Website", \
+    spiffindustries = SpiffIndustries(project_name, url, domain, "Spiff-Industries-Website", \
         Config.github_username, Config.email, username, pmu,
         True, project_root)
     spiffindustries.install(not development)

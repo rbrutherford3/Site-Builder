@@ -16,15 +16,17 @@ def main(development: bool):
     project_name = "baltaa"
     if development:
         url = None
+        domain = None
         username = Config.local_username
         pmu = Config.local_pmu
         project_root = os.path.join(Config.local_development_root, project_name)
     else:
         url = project_name + "." + Config.url
+        domain = Config.url
         username = Config.server_username
         pmu = Config.server_pmu
         project_root = None
-    baltaa = BaltAA(project_name, url, "Baltimore-AA", \
+    baltaa = BaltAA(project_name, url, domain, "Baltimore-AA", \
         Config.github_username, Config.email, username, pmu,
         False, project_root)
     print("### Cloning repository ###")

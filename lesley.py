@@ -22,15 +22,17 @@ def main(development: bool):
     project_name = "lesley"
     if development:
         url = None
+        domain = None
         username = Config.local_username
         pmu = Config.local_pmu
         project_root = os.path.join(Config.local_development_root, project_name)
     else:
         url = project_name + "." + Config.url
+        domain = Config.url
         username = Config.server_username
         pmu = Config.server_pmu
         project_root = None
-    lesley = Lesley(project_name, url, "Lesley-Paige-Art", \
+    lesley = Lesley(project_name, url, domain, "Lesley-Paige-Art", \
         Config.github_username, Config.email, username, pmu,
         False, project_root)
     lesley.install(not development)

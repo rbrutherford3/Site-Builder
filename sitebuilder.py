@@ -12,7 +12,7 @@ class SiteBuilder():
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     # Constructor
-    def __init__(self, project_name: str, url: str, github_name: str, \
+    def __init__(self, project_name: str, url: str, domain: str, github_name: str, \
         github_username: str, email: str, username: str, pmu: str, \
             is_web_root: bool, project_path: str) -> None:
         
@@ -28,6 +28,7 @@ class SiteBuilder():
             self.www_url = None
         else:
             self.www_url = "www." + url
+        self.domain = domain
         self.github_name = github_name
         self.github_username = github_username
         self.git_url = self.github_url + github_username + "/" + github_name
@@ -186,8 +187,11 @@ FLUSH PRIVILEGES;
 }}""".format(self.project_name, port)
                 SiteBuilder.new_file(location, os.path.join(self.nginx_conf_path, "services", self.project_name))
         else:
-            
             if self.is_web_root:
+
+                # Get SSL certificate
+                certificate_path, key_path = SiteBuilder.get_ssl(self.email, self.url)
+
                 # Create conf file for http-to-https forwarding on initial site creation
                 secure_conf="""server {
     listen 80 default_server;
@@ -196,50 +200,11 @@ FLUSH PRIVILEGES;
     return 301 https://$host$request_uri;
     }"""
                 SiteBuilder.new_file(secure_conf, os.path.join(self.nginx_conf_path, "secure.conf"))
-                # Include files for accessing srevices through subpaths (if they exist)
-                service_includes_line="include conf.d/services/*;"
                 # Createa directory for services if it doesn't exist
                 if not os.path.exists(os.path.join(self.nginx_conf_path, "services")):
                     os.mkdir(os.path.join(self.nginx_conf_path, "services"))
-            else:
-                service_includes_line=""
 
-            # Get SSL certificate
-            certificate_path, key_path = SiteBuilder.get_ssl(self.email, self.url)
-            # Connect to socket if using a systemd service like GUNICORN
-            if gunicorn:
-                # Need a line to serve static files if this is a Django service
-                if django:
-                    staticline = "location /static {\n        alias " + os.path.join(self.nginx_html_path, "static") + \
-                        ";\n    }\n\n    "
-                else:
-                    staticline = ""
-                conf="""server {{
-    listen 443 ssl http2;
-    server_name {0};
-    ssl_certificate {1};
-    ssl_certificate_key {2};
-    root {3};
-        
-    {4}location / {{
-        proxy_pass http://unix:/usr/share/nginx/sockets/{5}.sock;
-        proxy_set_header Host $http_host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }}
-}}
-""".format(self.url, certificate_path, key_path, self.html_path, staticline, system_service)
-                # Disabling Django subpaths until more work can be done
-                if not django:
-                # Forward to service using a proxy when accessing subpath
-                    location = """location /{0}/ {{
-    proxy_pass  https://{1}/;
-}}""".format(self.project_name, self.url)
-                    SiteBuilder.new_file(location, os.path.join(self.nginx_conf_path, "services", self.project_name))
-            # Normal setup (No socket, SSL certificates, 2 conf files [reg. and www]):
-            else:
-                conf="""server {{
+                root_conf="""server {{
     listen 443 ssl http2;
     server_name {0};
     ssl_certificate {1};
@@ -258,21 +223,59 @@ FLUSH PRIVILEGES;
         fastcgi_param   SCRIPT_NAME	$fastcgi_script_name;
     }}
 
-    {4}
+    include conf.d/services/*;
 }}
-""".format(self.url, certificate_path, key_path, self.html_path, service_includes_line)
-            SiteBuilder.new_file(conf, self.nginx_domain_path)
-            
-            certificate_path_www, key_path_www = SiteBuilder.get_ssl(self.email, self.www_url)
-            conf_www="""server {{
+""".format(self.url, certificate_path, key_path, self.html_path)
+                SiteBuilder.new_file(root_conf, self.nginx_domain_path)
+                
+                certificate_path_www, key_path_www = SiteBuilder.get_ssl(self.email, self.www_url)
+
+                root_conf_www="""server {{
     listen 443 ssl http2;
     server_name {0};
     ssl_certificate {1};
     ssl_certificate_key {2};
     return 301 https://{3}$request_uri;
 }}
-""".format(self.www_url, certificate_path_www, key_path_www, self.url)
-            SiteBuilder.new_file(conf_www, self.nginx_domain_path_www)
+""".format(self.www_url, certificate_path_www, key_path_www, self.domain)
+                SiteBuilder.new_file(root_conf_www, self.nginx_domain_path_www)
+
+            else:
+
+                # Get SSL certificate
+                certificate_path, key_path = SiteBuilder.get_ssl(self.email, self.url)
+
+                # Connect to socket if using a systemd service like GUNICORN
+                if gunicorn:
+                    service_conf="""location /{0}/static/  {{
+    alias {1}/static/;
+}}
+
+location /{0}/ {{
+    proxy_pass http://unix:{2}/{3}.sock;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}}
+""".format(self.project_name, self.html_path, self.nginx_socket_path, system_service)
+                    SiteBuilder.new_file(service_conf, os.path.join(self.nginx_conf_path, "services", self.project_name))
+
+                # Forward both regular and www. subdomains to subpath
+                conf_template="""server {{
+        listen 443 ssl http2;
+        server_name {0};
+        ssl_certificate {1};
+        ssl_certificate_key {2};
+        return 301 https://{3}/{4}$request_uri;
+    }}
+    """
+                conf = conf_template.format(self.url, certificate_path, key_path, self.domain, self.project_name)
+                SiteBuilder.new_file(conf, self.nginx_domain_path)
+                
+                certificate_path_www, key_path_www = SiteBuilder.get_ssl(self.email, self.www_url)
+                conf_www = conf_template.format(self.www_url, certificate_path_www, key_path_www, self.domain, self.project_name)
+                SiteBuilder.new_file(conf_www, self.nginx_domain_path_www)
         
         # Create a socket path if it doesn't exist
         if gunicorn:

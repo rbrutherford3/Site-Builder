@@ -12,15 +12,17 @@ def main(development: bool):
     project_name = "pizzapricer"
     if development:
         url = None
+        domain = None
         username = Config.local_username
         pmu = Config.local_pmu
         project_root = os.path.join(Config.local_development_root, project_name)
     else:
         url = project_name + "." + Config.url
+        domain = Config.url
         username = Config.server_username
         pmu = Config.server_pmu
         project_root = None
-    pizzaPricer = PizzaPricer(project_name, url, "Pizza-Pricer", \
+    pizzaPricer = PizzaPricer(project_name, url, domain, "Pizza-Pricer", \
         Config.github_username, Config.email, username, pmu,
         False, project_root)
     pizzaPricer.get_paths()
