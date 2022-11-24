@@ -380,14 +380,13 @@ WantedBy=multi-user.target
             os.system(self.pmu + " install gcc -y")
         self.pip_install("mysqlclient")
         if not aws:
-            os.system(self.pmu + " install libmysqlclient-dev")
+            os.system(self.pmu + " install libmysqlclient-dev -y")
         self.pip_install("gunicorn")
         self.pip_install("django-crispy-forms")
 
     # Install a PIP component on both user and root for systemd service purposes
     def pip_install(self, component):
-        os.system("runuser -l " + self.username + " -c 'pip3 install " + component + "'")
-        os.system("pip3 install " + component)
+        os.system("python3 -m pip install " + component)
 
     # Copy files from one directory to another directory that already exists
     def copytree_existing(src, dst):
@@ -421,6 +420,7 @@ WantedBy=multi-user.target
             os.system("chown -R " + self.username + ":" + self.username + " " + self.project_path)
         if self.development:
             os.system("chmod -R og+w " + self.nginx_socket_path)
+            os.system("usermod -a -G " + self.username + " www-data")
         else:
             os.system("chown -R nginx:nginx " + self.html_path)
             os.system("chown -R nginx:nginx " + self.nginx_socket_path)
