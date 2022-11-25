@@ -4,6 +4,7 @@ import os, sys, shutil
 from sitebuilder import SiteBuilder
 from config import Config
 from passwords import Passwords
+from recaptchav3 import reCAPTCHAv3
 
 class SpiffIndustries(SiteBuilder):
     pass
@@ -30,6 +31,19 @@ def main(development):
     spiffindustries.get_paths()
     print("### Cloning repository ###")
     spiffindustries.clone()
+    print("### Creating Google Recaptcha v3 ###")
+    recaptcha="""#!/bin/python3
+
+# Class for storing the Google reCAPTCHAv3 keys
+class reCAPTCHAv3:
+    site_key = "{0}"
+    secret_key = "{1}"
+"""
+    if development:
+        recaptcha = recaptcha.format(reCAPTCHAv3.local_site_key, reCAPTCHAv3.local_secret_key)
+    else:
+        recaptcha = recaptcha.format(reCAPTCHAv3.aws_site_key, reCAPTCHAv3.aws_secret_key)
+    SpiffIndustries.new_file(recaptcha, os.path.join(spiffindustries.project_path, "recaptchav3.py"))
     print("### Copying configuration file ###")
     shutil.copy("spiffindustries_config.py", spiffindustries.project_path)
     print("### Setting up database ###")

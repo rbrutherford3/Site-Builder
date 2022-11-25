@@ -5,6 +5,7 @@ import sys
 
 from sitebuilder import SiteBuilder
 from config import Config
+from recaptchav3 import reCAPTCHAv3
 
 class Chess(SiteBuilder):
 
@@ -35,6 +36,19 @@ def main(development: bool):
     chess.get_paths()
     print("### Cloning repository ###")
     chess.clone()
+    print("### Creating Google Recaptcha v3 ###")
+    recaptcha="""#!/bin/python3
+
+# Class for storing the Google reCAPTCHAv3 keys
+class reCAPTCHAv3:
+    site_key = "{0}"
+    secret_key = "{1}"
+"""
+    if development:
+        recaptcha = recaptcha.format(reCAPTCHAv3.local_site_key, reCAPTCHAv3.local_secret_key)
+    else:
+        recaptcha = recaptcha.format(reCAPTCHAv3.aws_site_key, reCAPTCHAv3.aws_secret_key)
+    Chess.new_file(recaptcha, os.path.join(chess.project_path, "recaptchav3.py"))
     print("### Creating systemd service ###")
     if development:
         chess.gunicorn(Config.local_username, "Gunicorn service for ASCII chess game", False)
