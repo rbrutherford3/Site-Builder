@@ -55,6 +55,16 @@ class reCAPTCHAv3:
     else:
         chess.gunicorn("nginx", "Gunicorn service for ASCII chess game", False)
     chess.nginx_conf(True, project_name, False, 5000)
+    print("### Setting up nightly maintenance ###")
+    cron_cmd = "0 3 * * * systemctl stop chess \n" + \
+        "5 3 * * * systemctl start chess \n"
+    cron_file = "/var/spool/cron/root"
+    if os.path.exists(cron_file):
+        with open(cron_file, "a") as myfile:
+            myfile.write(cron_cmd)
+    else:
+        Chess.new_file(cron_cmd, cron_file)
+        os.system("chmod 600 " + cron_file)
     print("### Finalizing ###")
     chess.finalize()
     os.system("systemctl restart " + project_name)

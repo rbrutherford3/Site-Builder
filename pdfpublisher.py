@@ -56,6 +56,16 @@ class reCAPTCHAv3:
     else:
         pdfPublisher.gunicorn("nginx", "Gunicorn service for PDF Publisher", False)
     pdfPublisher.nginx_conf(True, project_name, False, 5001)
+    print("### Setting up nightly maintenance ###")
+    cron_cmd = "0 3 * * * systemctl stop pdfpublisher \n" + \
+        "5 3 * * * systemctl start pdfpublisher \n"
+    cron_file = "/var/spool/cron/root"
+    if os.path.exists(cron_file):
+        with open(cron_file, "a") as myfile:
+            myfile.write(cron_cmd)
+    else:
+        PDFPublisher.new_file(cron_cmd, cron_file)
+        os.system("chmod 600 " + cron_file)
     print("### Finalizing ###")
     pdfPublisher.finalize()
     os.system("systemctl restart " + project_name)

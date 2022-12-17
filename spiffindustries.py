@@ -61,6 +61,24 @@ class reCAPTCHAv3:
         spiffindustries.gunicorn("nginx", "Gunicorn service for spiffindustries Django server", True)
     print("### Configuring NGINX ###")
     spiffindustries.nginx_conf(False)
+    print("### Setting up nightly maintenance ###")
+    cron_cmd = "0 3 * * * systemctl stop spiffindustries \n" + \
+        "5 3 * * * systemctl start spiffindustries \n" + \
+            "0 3 * * * mv " + os.path.join(spiffindustries.project_path, "index.html") + " " + \
+                os.path.join(spiffindustries.project_path, "index_saved.html") + " && " + \
+                    "mv " + os.path.join(spiffindustries.project_path, "maintenance.html") + " " + \
+                        os.path.join(spiffindustries.project_path, "index.html") + "\n" + \
+                            "5 3 * * * mv " + os.path.join(spiffindustries.project_path, "index.html") + " " + \
+                                os.path.join(spiffindustries.project_path, "maintenance.html") + " && " + \
+                                    "mv " + os.path.join(spiffindustries.project_path, "index_saved.html") + " " + \
+                                        os.path.join(spiffindustries.project_path, "index.html") + "\n"
+    cron_file = "/var/spool/cron/root"
+    if os.path.exists(cron_file):
+        with open(cron_file, "a") as myfile:
+            myfile.write(cron_cmd)
+    else:
+        SpiffIndustries.new_file(cron_cmd, cron_file)
+        os.system("chmod 600 " + cron_file)
     print("### Finalizing ###")
     spiffindustries.finalize()
     os.system("systemctl restart " + project_name)
