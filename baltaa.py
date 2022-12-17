@@ -2,6 +2,7 @@
 
 import os
 import sys
+import shutil
 
 from sitebuilder import SiteBuilder
 from passwords import Passwords
@@ -66,6 +67,31 @@ def main(development: bool):
     if not development:
         print("### Configuring baltaa.spiffindustries.com on NGINX ###")
         baltaa.nginx_conf(False)
+    if not development:
+        this_dir = os.path.dirname(os.path.realpath(__file__))
+        print("### Creating nightly data reset ###")
+        reset_sql = "baltaa_demo_data_reset.sql"
+        data_sql = "baltaa_demo_data.sql"
+        reset = "baltaa_demo_data_reset"
+        shutil.copy(os.path.join(this_dir, reset_sql), baltaa.project_path)
+        shutil.copy(os.path.join(this_dir, data_sql), baltaa.project_path)
+        nightly = """#!/bin/bash
+
+mysql < {0}
+mysql < {1}
+""".format(os.path.join(baltaa.project_path, reset_sql), os.path.join(baltaa.project_path, data_sql))
+        reset_file = os.path.join(baltaa.project_path, reset)
+        BaltAA.new_file(nightly, reset_file)
+        os.system("chmod +x " + reset_file)
+        cron_cmd = "0 3 * * * " + reset_file + "\n"
+        cron_file = "/var/spool/cron/root"
+        if os.path.exists(cron_file):
+            with open(cron_file, "a") as myfile:
+                myfile.write(cron_cmd)
+        else:
+            BaltAA.new_file(cron_cmd, cron_file)
+            os.system("chmod 600 " + cron_file)
+        os.system("systemctl restart crond")
     print("### Finalizing ###")
     baltaa.finalize()
     print("### Finished! ###")
