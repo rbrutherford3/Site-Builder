@@ -343,6 +343,8 @@ WantedBy=multi-user.target
 
     # Install all software for the server, including NGINX, PHP, MySQL, Python, etc
     def install(self, aws: bool) -> None:
+        # Set timezone
+        os.system("timedatectl set-timezone America/New_York")
         # Make system updates and upgrades
         os.system(self.pmu + " update -y")
         if self.pmu == "apt":
