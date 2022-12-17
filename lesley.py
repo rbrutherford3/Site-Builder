@@ -79,9 +79,40 @@ def main(development: bool):
     os.system('chmod -R og+w ' + os.path.join(lesley.html_path, 'admin', 'upload'))
     os.system('chmod -R og+w ' + os.path.join(lesley.html_path, 'img'))
     print("### Downloading and setting up demo art ###")
-    this_dir = Path(__file__).resolve().parent
-    shutil.copy(os.path.join(this_dir, "lesley_demo.php"), os.path.join(lesley.project_path, "admin", "demo.php"))
-    subprocess.run("cd " + os.path.join(lesley.project_path, "admin") + "; php -f demo.php", capture_output=False, shell=True)      
+    this_dir = os.path.dirname(os.path.realpath(__file__))
+    admin_path = os.path.join(lesley.project_path, "admin")
+    shutil.copy(os.path.join(this_dir, "lesley_demo.php"), os.path.join(admin_path, "demo.php"))
+    subprocess.run("cd " + admin_path + "; php -f demo.php", capture_output=False, shell=True)
+    if not development:
+        print("### Creating nightly data reset ###")
+        reset_sql = "lesley_demo_data_reset.sql"
+        data_sql = "lesley_demo_data.sql"
+        reset = "lesley_demo_data_reset"
+        shutil.copy(os.path.join(this_dir, reset_sql), lesley.project_path)
+        shutil.copy(os.path.join(this_dir, data_sql), lesley.project_path)
+        nightly = """#!/bin/bash
+
+mysql < {0}
+mysql < {1}
+rm {2}
+rm {3}
+rm {4}
+cd {5} && php -f demo.php
+""".format(os.path.join(lesley.project_path, reset_sql), os.path.join(lesley.project_path, data_sql), \
+    os.path.join(lesley.project_path, "img", "originals", "*"), os.path.join(lesley.project_path, "img", "thumbnails", "*"), \
+        os.path.join(lesley.project_path, "img", "watermarked", "*"), admin_path)
+        reset_file = os.path.join(lesley.project_path, reset)
+        Lesley.new_file(nightly, reset_file)
+        os.system("chmod +x " + reset_file)
+        cron_cmd = "0 3 * * * " + reset_file + "\n"
+        cron_file = "/var/spool/cron/root"
+        if os.path.exists(cron_file):
+            with open(cron_file, "a") as myfile:
+                myfile.write(cron_cmd)
+        else:
+            Lesley.new_file(cron_cmd, cron_file)
+            os.system("chmod 600 " + cron_file)
+        os.system("systemctl restart crond")
     print("### Finished! ###")
 
 if __name__ == '__main__':
