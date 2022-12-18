@@ -14,6 +14,11 @@ class PDFPublisher(SiteBuilder):
         os.system("pip3 install PyPDF2")
         os.system("pip3 install FPDF")
         os.system("pip3 install pdf.tocgen")
+        if aws:
+            os.system(self.pmu + " install curl cabextract xorg-x11-font-utils fontconfig -y")
+            os.system("rpm -i https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm")
+        else:
+            os.system(self.pmu + " install ttf-mscorefonts-installer -y")
 
 def main(development: bool):
     print("### Initiating \"PDF Publisher\" site installation ###")
