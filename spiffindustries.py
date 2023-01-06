@@ -44,6 +44,8 @@ class reCAPTCHAv3:
     else:
         recaptcha = recaptcha.format(reCAPTCHAv3.aws_site_key, reCAPTCHAv3.aws_secret_key)
     SpiffIndustries.new_file(recaptcha, os.path.join(spiffindustries.project_path, "recaptchav3.py"))
+    print("### Copying AWS SAS credentials ###")
+    shutil.copy("aws_sas.py", spiffindustries.project_path)
     print("### Copying configuration file ###")
     shutil.copy("spiffindustries_config.py", spiffindustries.project_path)
     print("### Setting up database ###")
