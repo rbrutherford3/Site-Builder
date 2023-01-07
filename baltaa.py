@@ -93,6 +93,7 @@ mysql < {1}
             os.system("chmod 600 " + cron_file)
         os.system("systemctl restart crond")
     print("### Finalizing ###")
+    os.system('chmod -R og+w ' + os.path.join(baltaa.html_path, 'scheduler', 'upload'))
     baltaa.finalize()
     print("### Finished! ###")
 
