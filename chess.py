@@ -14,7 +14,7 @@ class Chess(SiteBuilder):
         self.pip_install("flask")
         self.pip_install("jsonpickle")
 
-def main(development: bool):
+def main(development: bool, test: bool = False):
     print("### Initiating \"ASCII Chess\" site installation ###")
     project_name = "chess"
     if development:
@@ -54,7 +54,7 @@ class reCAPTCHAv3:
         chess.gunicorn(Config.local_username, "Gunicorn service for ASCII chess game", False)
     else:
         chess.gunicorn("nginx", "Gunicorn service for ASCII chess game", False)
-    chess.nginx_conf(True, project_name, False, 5000)
+    chess.nginx_conf(True, test, project_name, False, 5000)
     print("### Setting up nightly maintenance ###")
     cron_cmd = "0 3 * * * systemctl stop chess \n" + \
         "5 3 * * * systemctl start chess \n"
@@ -71,10 +71,15 @@ class reCAPTCHAv3:
     print("### Finished! ###")
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
+    error_msg = "Invalid options: enter '-d' or '--development' for development servers and '-t' or '--test' for test certifications (production only)"
+    if len(sys.argv) == 2:
         if (sys.argv[1] == '--development' or sys.argv[1] == '-d'):
             main(True)
+        elif (sys.argv[1] == '--test' or sys.argv[1] == '-t'):
+            main(False, True)
         else:
-            print("Invalid option: enter '-d' or '--development' for development servers")
+            print(error_msg)
+    elif len(sys.argv) > 2:
+        print(error_msg)
     else:
         main(False)

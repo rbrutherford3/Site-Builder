@@ -17,7 +17,7 @@ class Lesley(SiteBuilder):
             os.system(self.pmu + " install libmagickcore-6* -y")
         os.system("systemctl restart php-fpm")
 
-def main(development: bool):
+def main(development: bool, test: bool = False):
     print("### Initiating \"Lesley Paige Art\" site installation ###")
     project_name = "lesley"
     if development:
@@ -72,7 +72,7 @@ def main(development: bool):
     Lesley.new_file(recaptcha_php, os.path.join(lesley.project_path, "admin", "credentialsrecaptchav3.php"))
     if not development:
         print("### Configuring lesley.spiffindustries.com on NGINX ###")
-        lesley.nginx_conf(False)
+        lesley.nginx_conf(False, test)
     print("### Finalizing ###")
     lesley.finalize()
     # Change folder permissions to allow writing new images as admin
@@ -116,10 +116,15 @@ cd {5} && php -f demo.php
     print("### Finished! ###")
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
+    error_msg = "Invalid options: enter '-d' or '--development' for development servers and '-t' or '--test' for test certifications (production only)"
+    if len(sys.argv) == 2:
         if (sys.argv[1] == '--development' or sys.argv[1] == '-d'):
             main(True)
+        elif (sys.argv[1] == '--test' or sys.argv[1] == '-t'):
+            main(False, True)
         else:
-            print("Invalid option: enter '-d' or '--development' for development servers")
+            print(error_msg)
+    elif len(sys.argv) > 2:
+        print(error_msg)
     else:
         main(False)

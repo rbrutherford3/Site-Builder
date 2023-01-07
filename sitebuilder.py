@@ -136,7 +136,7 @@ FLUSH PRIVILEGES;
 
     # Create NGINX configuration files for domain, subdomains and http-to-https forwarding
     # Include SSL certificate locations as needed, using the get_ssl function
-    def nginx_conf(self, gunicorn: bool, system_service: str = None, django: bool = False, port: int = None) -> None:
+    def nginx_conf(self, gunicorn: bool, test: bool, system_service: str = None, django: bool = False, port: int = None) -> None:
         
         # Only create a conf file on the development server for socket connections
         if self.development:
@@ -190,7 +190,7 @@ FLUSH PRIVILEGES;
             if self.is_web_root:
 
                 # Get SSL certificate
-                certificate_path, key_path = SiteBuilder.get_ssl(self.email, self.url)
+                certificate_path, key_path = SiteBuilder.get_ssl(self.email, self.url, test)
 
                 # Create conf file for http-to-https forwarding on initial site creation
                 secure_conf="""server {
@@ -228,7 +228,7 @@ FLUSH PRIVILEGES;
 """.format(self.url, certificate_path, key_path, self.html_path)
                 SiteBuilder.new_file(root_conf, self.nginx_domain_path)
                 
-                certificate_path_www, key_path_www = SiteBuilder.get_ssl(self.email, self.www_url)
+                certificate_path_www, key_path_www = SiteBuilder.get_ssl(self.email, self.www_url, test)
 
                 root_conf_www="""server {{
     listen 443 ssl http2;
@@ -243,7 +243,7 @@ FLUSH PRIVILEGES;
             else:
 
                 # Get SSL certificate
-                certificate_path, key_path = SiteBuilder.get_ssl(self.email, self.url)
+                certificate_path, key_path = SiteBuilder.get_ssl(self.email, self.url, test)
 
                 # Connect to socket if using a systemd service like GUNICORN
                 if gunicorn:
@@ -273,7 +273,7 @@ location /{0}/ {{
                 conf = conf_template.format(self.url, certificate_path, key_path, self.domain, self.project_name)
                 SiteBuilder.new_file(conf, self.nginx_domain_path)
                 
-                certificate_path_www, key_path_www = SiteBuilder.get_ssl(self.email, self.www_url)
+                certificate_path_www, key_path_www = SiteBuilder.get_ssl(self.email, self.www_url, test)
                 conf_www = conf_template.format(self.www_url, certificate_path_www, key_path_www, self.domain, self.project_name)
                 SiteBuilder.new_file(conf_www, self.nginx_domain_path_www)
         
@@ -293,9 +293,13 @@ location /{0}/ {{
         os.system("mysql < " + filepath)
 
     # Get an SSL certificate for a domain or subdomain (tricky string operation!)
-    def get_ssl(email: str, url: str) -> str:
+    def get_ssl(email: str, url: str, test: bool) -> str:
+        if test:
+            test_cert_option = " --test-cert"
+        else:
+            test_cert_option = " "
         # Get the certificate location output from the system
-        ssl = os.popen("certbot certonly -n --agree-tos -m " + email + " --nginx -d " + url).read()
+        ssl = os.popen("certbot certonly -n --agree-tos -m " + email + test_cert_option + " --nginx -d " + url).read()
 
         # Find the first .pem file location by the string that precedes it.
         certificate_search_begin = "Your certificate and chain have been saved at:\n   "

@@ -12,7 +12,7 @@ from config import Config
 class BaltAA(SiteBuilder):
     pass
 
-def main(development: bool):
+def main(development: bool, test: bool = False):
     print("### Initiating \"Baltimore AA\" site installation ###")
     project_name = "baltaa"
     if development:
@@ -66,7 +66,7 @@ def main(development: bool):
     BaltAA.new_file(recaptcha_php, os.path.join(baltaa.project_path, "lib", "credentialsrecaptchav3.php"))
     if not development:
         print("### Configuring baltaa.spiffindustries.com on NGINX ###")
-        baltaa.nginx_conf(False)
+        baltaa.nginx_conf(False, test)
     if not development:
         this_dir = os.path.dirname(os.path.realpath(__file__))
         print("### Creating nightly data reset ###")
@@ -97,10 +97,15 @@ mysql < {1}
     print("### Finished! ###")
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
+    error_msg = "Invalid options: enter '-d' or '--development' for development servers and '-t' or '--test' for test certifications (production only)"
+    if len(sys.argv) == 2:
         if (sys.argv[1] == '--development' or sys.argv[1] == '-d'):
             main(True)
+        elif (sys.argv[1] == '--test' or sys.argv[1] == '-t'):
+            main(False, True)
         else:
-            print("Invalid option: enter '-d' or '--development' for development servers")
+            print(error_msg)
+    elif len(sys.argv) > 2:
+        print(error_msg)
     else:
         main(False)
