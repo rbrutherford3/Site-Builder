@@ -8,6 +8,7 @@ from passwords import Passwords
 from recaptchav3 import reCAPTCHAv3
 from sitebuilder import SiteBuilder
 from config import Config
+import urllib.request
 
 class Lesley(SiteBuilder):
     # Install PHP-Imagick
@@ -73,14 +74,18 @@ def main(development: bool, test: bool = False):
     if not development:
         print("### Configuring lesley.spiffindustries.com on NGINX ###")
         lesley.nginx_conf(False, test)
+    print("### Setting up PHPMailer ###")
+    this_dir = os.path.dirname(os.path.realpath(__file__))
+    admin_path = os.path.join(lesley.project_path, "admin")
+    urllib.request.urlretrieve("https://github.com/PHPMailer/PHPMailer/archive/master.zip", os.path.join(this_dir, "phpmailer.zip"))
+    shutil.unpack_archive(os.path.join(this_dir, "phpmailer.zip"), admin_path)
+    shutil.copy(os.path.join(this_dir, "aws_sas.php"), os.path.join(admin_path, "aws_sas.php"))
     print("### Finalizing ###")
     lesley.finalize()
     # Change folder permissions to allow writing new images as admin
     os.system('chmod -R og+w ' + os.path.join(lesley.html_path, 'admin', 'upload'))
     os.system('chmod -R og+w ' + os.path.join(lesley.html_path, 'img'))
     print("### Downloading and setting up demo art ###")
-    this_dir = os.path.dirname(os.path.realpath(__file__))
-    admin_path = os.path.join(lesley.project_path, "admin")
     shutil.copy(os.path.join(this_dir, "lesley_demo.php"), os.path.join(admin_path, "demo.php"))
     subprocess.run("cd " + admin_path + "; php -f demo.php", capture_output=False, shell=True)
     if not development:
