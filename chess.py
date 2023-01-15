@@ -14,6 +14,9 @@ class Chess(SiteBuilder):
         self.pip_install("flask")
         self.pip_install("jsonpickle")
 
+def start():
+    os.system("systemctl start chess.service")
+
 def main(development: bool, test: bool = False):
     print("### Initiating \"ASCII Chess\" site installation ###")
     project_name = "chess"
@@ -51,9 +54,9 @@ class reCAPTCHAv3:
     Chess.new_file(recaptcha, os.path.join(chess.project_path, "recaptchav3.py"))
     print("### Creating systemd service ###")
     if development:
-        chess.gunicorn(Config.local_username, "Gunicorn service for ASCII chess game", False)
+        chess.gunicorn(Config.local_username, "Gunicorn service for ASCII chess game", False, 3, 1)
     else:
-        chess.gunicorn("nginx", "Gunicorn service for ASCII chess game", False)
+        chess.gunicorn("nginx", "Gunicorn service for ASCII chess game", False, 3, 1)
     chess.nginx_conf(True, test, project_name, False, 5000)
     print("### Setting up nightly maintenance ###")
     cron_cmd = "0 3 * * * systemctl stop chess \n" + \
@@ -67,7 +70,6 @@ class reCAPTCHAv3:
         os.system("chmod 600 " + cron_file)
     print("### Finalizing ###")
     chess.finalize()
-    os.system("systemctl restart " + project_name)
     print("### Finished! ###")
 
 if __name__ == '__main__':

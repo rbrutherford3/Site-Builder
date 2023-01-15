@@ -1,10 +1,10 @@
-import sys
+import sys, os
 
-from spiffindustries import main as spiffindustries_main
+from spiffindustries import main as spiffindustries_main, start as spiffindustries_start
 from baltaa import main as baltaa_main
-from chess import main as chess_main
+from chess import main as chess_main, start as chess_start
 from lesley import main as lesley_main
-from pdfpublisher import main as pdfpublisher_main
+from pdfpublisher import main as pdfpublisher_main, start as pdfpublisher_start
 from pizzapricer import main as pizzapricer_main
 from taskmaster import main as taskmaster_main
 
@@ -25,6 +25,9 @@ def main(development: bool, test: bool = False):
         pdfpublisher_main(False, test)
         pizzapricer_main(False, test)
         taskmaster_main(False, test)
+    chess_start()
+    pdfpublisher_start()
+    spiffindustries_start()
         
 if __name__ == '__main__':
     error_msg = "Invalid options: enter '-d' or '--development' for development servers and '-t' or '--test' for test certifications (production only)"

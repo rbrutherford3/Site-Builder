@@ -20,6 +20,9 @@ class PDFPublisher(SiteBuilder):
         else:
             os.system(self.pmu + " install ttf-mscorefonts-installer -y")
 
+def start():
+    os.system("systemctl start pdfpublisher.service")
+
 def main(development: bool, test:bool = False):
     print("### Initiating \"PDF Publisher\" site installation ###")
     project_name = "pdfpublisher"
@@ -57,9 +60,9 @@ class reCAPTCHAv3:
     PDFPublisher.new_file(recaptcha, os.path.join(pdfPublisher.project_path, "recaptchav3.py"))
     print("### Creating systemd service ###")
     if development:
-        pdfPublisher.gunicorn(Config.local_username, "Gunicorn service for PDF Publisher", False)
+        pdfPublisher.gunicorn(Config.local_username, "Gunicorn service for PDF Publisher", False, 5, 3)
     else:
-        pdfPublisher.gunicorn("nginx", "Gunicorn service for PDF Publisher", False)
+        pdfPublisher.gunicorn("nginx", "Gunicorn service for PDF Publisher", False, 5, 3)
     pdfPublisher.nginx_conf(True, test, project_name, False, 5001)
     print("### Setting up nightly maintenance ###")
     cron_cmd = "0 3 * * * systemctl stop pdfpublisher \n" + \
@@ -73,7 +76,6 @@ class reCAPTCHAv3:
         os.system("chmod 600 " + cron_file)
     print("### Finalizing ###")
     pdfPublisher.finalize()
-    os.system("systemctl restart " + project_name)
     print("### Finished! ###")
 
 if __name__ == '__main__':

@@ -9,6 +9,9 @@ from recaptchav3 import reCAPTCHAv3
 class SpiffIndustries(SiteBuilder):
     pass
 
+def start():
+    os.system("systemctl start spiffindustries.service")
+
 def main(development: bool, test: bool = False):
     print("### Initiating \"Spiff Industries\" site installation ###")
     project_name = "spiffindustries"
@@ -58,9 +61,9 @@ class reCAPTCHAv3:
     os.remove(db_user_sql_path)
     print("### Creating systemd service ###")
     if development:
-        spiffindustries.gunicorn(Config.local_username, "Gunicorn service for spiffindustries Django server", True)
+        spiffindustries.gunicorn(Config.local_username, "Gunicorn service for spiffindustries Django server", True, 3, 1)
     else:
-        spiffindustries.gunicorn("nginx", "Gunicorn service for spiffindustries Django server", True)
+        spiffindustries.gunicorn("nginx", "Gunicorn service for spiffindustries Django server", True, 3, 1)
     print("### Configuring NGINX ###")
     spiffindustries.nginx_conf(False, test)
     print("### Setting up nightly maintenance ###")
@@ -83,7 +86,6 @@ class reCAPTCHAv3:
         os.system("chmod 600 " + cron_file)
     print("### Finalizing ###")
     spiffindustries.finalize()
-    os.system("systemctl restart " + project_name)
     print("### Finished! ###")
 
 if __name__ == '__main__':

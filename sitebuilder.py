@@ -317,7 +317,7 @@ location /{0}/ {{
         return certificate_path, key_path
 
     # Createa a gunicorn systemd file and install it
-    def gunicorn(self, user: str, description: str, django: bool) -> None:
+    def gunicorn(self, user: str, description: str, django: bool, workers: int, threads: int) -> None:
 
         data = subprocess.run("runuser -l " + self.username + " -c 'which gunicorn'", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         gunicorn_path = data.stdout.decode().replace("\n","")
@@ -331,7 +331,7 @@ User={1}
 Group={1}
 WorkingDirectory={2}
 Environment="PATH=cd"
-ExecStart={3} --workers=5 --threads=2 --bind=unix:{4} {5}
+ExecStart={3} --workers={4} --threads={5} --bind=unix:{6} {7}
 
 [Install]
 WantedBy=multi-user.target
@@ -340,7 +340,8 @@ WantedBy=multi-user.target
             service_line = self.project_name + ".wsgi:application"
         else:
             service_line = "app:app"
-        service = service.format(description, user, self.project_path, gunicorn_path, os.path.join(self.nginx_socket_path, self.project_name + ".sock"), service_line)
+        service = service.format(description, user, self.project_path, gunicorn_path, str(workers), str(threads), \
+            os.path.join(self.nginx_socket_path, self.project_name + ".sock"), service_line)
         SiteBuilder.new_file(service, os.path.join("/etc/systemd/system/", service_name))
         os.system("systemctl daemon-reload")
         os.system("systemctl enable " + service_name)
@@ -434,4 +435,3 @@ WantedBy=multi-user.target
         else:
             os.system("chown -R nginx:nginx " + self.html_path)
             os.system("chown -R nginx:nginx " + self.nginx_socket_path)
-        os.system("systemctl restart nginx")
