@@ -84,6 +84,20 @@ class reCAPTCHAv3:
     else:
         SpiffIndustries.new_file(cron_cmd, cron_file)
         os.system("chmod 600 " + cron_file)
+    print("### Modifying nginx.conf ###")
+    nginx_conf_file_path = "/etc/nginx/nginx.conf"
+    search_string = "    server {\n"
+    start_num = SpiffIndustries.find_text_in_file(search_string, nginx_conf_file_path, True)
+    search_string = "    }\n"
+    end_num = SpiffIndustries.find_text_in_file(search_string, nginx_conf_file_path, True)
+    with open(nginx_conf_file_path, 'r+') as fp:
+        lines = fp.readlines()
+        fp.seek(0)
+        fp.truncate()
+        newlines = [''] * (len(lines) - (end_num - start_num + 1))
+        newlines[0:start_num-1] = lines[0:start_num-1]
+        newlines[start_num:] = lines[end_num+1:]
+        fp.writelines(newlines) 
     print("### Finalizing ###")
     spiffindustries.finalize()
     print("### Finished! ###")

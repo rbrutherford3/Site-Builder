@@ -425,6 +425,18 @@ WantedBy=multi-user.target
         else:
             os.remove(top)
 
+    # Taken from https://stackoverflow.com/a/3961303/3130769
+    def find_text_in_file(phrase: str, filename: str, match: bool):
+        with open(filename,'r') as f:
+            for (i, line) in enumerate(f):
+                if match:
+                    if phrase == line:
+                        return i
+                else:
+                    if phrase in line:
+                        return i
+        return -1
+
     # Kick out the jams
     def finalize(self) -> None:
         if self.has_symlink:
