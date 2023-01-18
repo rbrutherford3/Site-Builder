@@ -74,6 +74,35 @@ class reCAPTCHAv3:
     else:
         PDFPublisher.new_file(cron_cmd, cron_file)
         os.system("chmod 600 " + cron_file)
+    print("### Modifying nginx.conf ###")
+    nginx_conf_file_path = "/etc/nginx/nginx.conf"
+    search_string = "client_max_body_size"
+    line_num = PDFPublisher.find_text_in_file(search_string, nginx_conf_file_path, False)
+    if line_num > 0:
+        with open(nginx_conf_file_path, 'r+') as fp:
+            lines = fp.readlines()
+            fp.seek(0)
+            fp.truncate()
+            newlines = [''] * (len(lines) -1)
+            newlines[0:line_num-1] = lines[0:line_num]
+            newlines[line_num:] = lines[line_num+1:]
+            fp.writelines(newlines)
+    search_string = "http {\n"
+    line_num = PDFPublisher.find_text_in_file(search_string, nginx_conf_file_path, True)
+    if line_num > 0:
+        with open(nginx_conf_file_path, 'r+') as fp:
+            lines = fp.readlines()
+            fp.seek(0)
+            fp.truncate()
+            newlines = [''] * (len(lines)+5)
+            newlines[0:line_num] = lines[0:line_num+1]
+            newlines[line_num+1] = "    client_max_body_size 1024M;\n"
+            newlines[line_num+2] = "    proxy_connect_timeout 600;\n"
+            newlines[line_num+3] = "    proxy_send_timeout 600;\n"
+            newlines[line_num+4] = "    proxy_read_timeout 600;\n"
+            newlines[line_num+5] = "    send_timeout 600;\n"
+            newlines[line_num+6:] = lines[line_num+1:]
+            fp.writelines(newlines)       
     print("### Finalizing ###")
     pdfPublisher.finalize()
     print("### Finished! ###")
