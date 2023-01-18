@@ -80,6 +80,25 @@ def main(development: bool, test: bool = False):
     urllib.request.urlretrieve("https://github.com/PHPMailer/PHPMailer/archive/master.zip", os.path.join(this_dir, "phpmailer.zip"))
     shutil.unpack_archive(os.path.join(this_dir, "phpmailer.zip"), admin_path)
     shutil.copy(os.path.join(this_dir, "aws_sas.php"), os.path.join(admin_path, "aws_sas.php"))
+    print("### Modifying php.ini ###")
+    cmd = 'php --ini | grep "Loaded Configuration File"'
+    ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+    output = ps.communicate()[0]
+    output = output.decode()
+    start = output.find('/')
+    end = output.find('\n')
+    phpfilepath = output[start:end]
+    postmaxsize_linenum = SiteBuilder.find_text_in_file('post_max_size', phpfilepath, False)
+    uploadmaxfilesize_linenum = SiteBuilder.find_text_in_file('upload_max_filesize', phpfilepath, False)
+    with open(phpfilepath, 'r+') as fp:
+        lines = fp.readlines()
+        fp.seek(0)
+        fp.truncate()
+        newlines = lines
+        newlines[postmaxsize_linenum] = "post_max_size = 128M\n"
+        newlines[uploadmaxfilesize_linenum] = "upload_max_filesize = 128M\n"
+        fp.writelines(newlines)
+    os.system("systemctl restart php*fpm")
     print("### Finalizing ###")
     lesley.finalize()
     # Change folder permissions to allow writing new images as admin
