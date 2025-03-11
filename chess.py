@@ -13,6 +13,9 @@ class Chess(SiteBuilder):
     def install(self, aws: bool) -> None:
         self.pip_install("flask")
         self.pip_install("jsonpickle")
+        # Fix for Flask package deprication
+        os.system("pip3 uninstall urllib3 -y")
+        os.system("pip3 install urllib3==1.26.7")
 
 def start():
     os.system("systemctl start chess.service")

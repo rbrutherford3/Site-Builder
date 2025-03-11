@@ -393,6 +393,7 @@ WantedBy=multi-user.target
             os.system(self.pmu + " install libmysqlclient-dev -y")
         self.pip_install("gunicorn")
         self.pip_install("django-crispy-forms")
+        self.pip_install("crispy-bootstrap4")
         self.pip_install("requests")
 
     # Install a PIP component on both user and root for systemd service purposes

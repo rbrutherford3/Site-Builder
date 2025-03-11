@@ -4,10 +4,6 @@
     require_once 'database.php';
 
     # Add famous images and information from Wikipedia for demo purposes
-    add_image("The Battle of Alexander at Issus", 62, 47, 2022, 0, NULL,
-        "The Battle of Alexander at Issus (German: Alexanderschlacht) is a 1529 oil painting by the German artist Albrecht Altdorfer (c. 1480–1538), a pioneer of landscape art and a founding member of the Danube school. The painting portrays the 333 BC Battle of Issus, in which Alexander the Great secured a decisive victory over Darius III of Persia and gained crucial leverage in his campaign against the Persian Empire. The painting is widely regarded as Altdorfer's masterpiece, and is one of the most famous examples of the type of Renaissance landscape painting known as the world landscape, which here reaches an unprecedented grandeur.",
-        "https://en.wikipedia.org/wiki/The_Battle_of_Alexander_at_Issus",
-        "https://upload.wikimedia.org/wikipedia/commons/f/f3/Albrecht_Altdorfer_-_Schlacht_bei_Issus_%28Alte_Pinakothek%2C_M%C3%BCnchen%29.jpg");
     add_image("Windmill at Wijk bij Duurstede", 32, 39, 1901, 0, NULL,
         "The Windmill of Wijk bij Duurstede (c. 1670) is an oil on canvas painting by the Dutch painter Jacob van Ruisdael. It is an example of Dutch Golden Age painting and is now in the collection of the Amsterdam Museum, on loan to the Rijksmuseum. The painting shows Wijk bij Duurstede, a riverside town about 20 kilometers from Utrecht, with a dominating cylindrical windmill, harmonised by the lines of river bank and sails, and the contrasts between light and shadow working together with the intensified concentration of mass and space. [1] The attention to detail is remarkable. Art historian Seymour Slive reports that both from an aeronautical engineering and a hydrological viewpoint the finest levels of details are correct, in the windmill's sails and the river's waves respectively.[2]",
         "https://en.wikipedia.org/wiki/Windmill_at_Wijk_bij_Duurstede",
@@ -28,7 +24,7 @@
         # Publish each image (except one, to show an unpublished piece)
         $db = database::connect();
         $db->beginTransaction();
-        for ($i=1; $i<=4; $i++) {
+        for ($i=1; $i<=3; $i++) {
             updateDB($db, $i);
         }
         $db->commit();
