@@ -7,6 +7,7 @@ from lesley import main as lesley_main
 from pdfpublisher import main as pdfpublisher_main, start as pdfpublisher_start
 from pizzapricer import main as pizzapricer_main
 from taskmaster import main as taskmaster_main
+from authentictarot import main as authentictarot_main
 
 def main(development: bool, test: bool = False):
     if development:
@@ -17,6 +18,7 @@ def main(development: bool, test: bool = False):
         pdfpublisher_main(True)
         pizzapricer_main(True)
         taskmaster_main(True)
+        authentictarot_main(True)
     else:
         spiffindustries_main(False, test)
         baltaa_main(False, test)
@@ -25,6 +27,7 @@ def main(development: bool, test: bool = False):
         pdfpublisher_main(False, test)
         pizzapricer_main(False, test)
         taskmaster_main(False, test)
+        authentictarot_main(False, test)
     chess_start()
     pdfpublisher_start()
     spiffindustries_start()
