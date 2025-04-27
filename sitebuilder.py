@@ -205,7 +205,8 @@ FLUSH PRIVILEGES;
                     os.mkdir(os.path.join(self.nginx_conf_path, "services"))
 
                 root_conf="""server {{
-    listen 443 ssl http2;
+    listen 443 ssl;
+    http2 on;
     server_name {0};
     ssl_certificate {1};
     ssl_certificate_key {2};
@@ -231,7 +232,8 @@ FLUSH PRIVILEGES;
                 certificate_path_www, key_path_www = SiteBuilder.get_ssl(self.email, self.www_url, test)
 
                 root_conf_www="""server {{
-    listen 443 ssl http2;
+    listen 443 ssl;
+    http2 on;
     server_name {0};
     ssl_certificate {1};
     ssl_certificate_key {2};
@@ -263,7 +265,8 @@ location /{0}/ {{
 
                 # Forward both regular and www. subdomains to subpath
                 conf_template="""server {{
-        listen 443 ssl http2;
+        listen 443 ssl;
+        http2 on;
         server_name {0};
         ssl_certificate {1};
         ssl_certificate_key {2};
