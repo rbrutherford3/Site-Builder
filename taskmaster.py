@@ -34,17 +34,10 @@ def main(development: bool, test: bool = False):
     taskmaster.nginx_conf(True, test, "spiffindustries", True, 8000)
     print("### Finalizing ###")
     taskmaster.finalize()
-    reset_tasks="""#!/bin/bash
-rm -r {0}
-mysql -e "DELETE FROM SpiffIndustries.django_migrations WHERE app = '{1}'"
-python3 {2} makemigrations {1}
-python3 {2} migrate
-python3 {2} collectstatic
-""".format(os.path.join(taskmaster.project_path, "migrations"), project_name, os.path.join(taskmaster.nginx_html_path, "manage.py"))
-    reset_tasks_path = os.path.join(taskmaster.project_path, "reset_tasks")
-    TaskMaster.new_file(reset_tasks, reset_tasks_path)
-    os.system("chmod +x " + reset_tasks_path)
-    os.system("bash " + reset_tasks_path)
+    manage_py_path = os.path.join(taskmaster.nginx_html_path, "manage.py")
+    os.system(f"python3 {manage_py_path} makemigrations {project_name}")
+    os.system(f"python3 {manage_py_path} migrate")
+    os.system(f"python3 {manage_py_path} collectstatic")
     os.system("systemctl restart spiffindustries")
     print("### Finished! ###")
 
