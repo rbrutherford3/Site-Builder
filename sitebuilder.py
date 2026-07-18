@@ -149,7 +149,7 @@ FLUSH PRIVILEGES;
         index           index.html index.htm index.php;
     }}
     
-    location ~* \.php$ {{
+    location ~* \\.php$ {{
         fastcgi_pass	unix:/var/run/php/php-fpm.sock;
         fastcgi_index   index.php;
         include		    fastcgi_params;
@@ -216,7 +216,7 @@ FLUSH PRIVILEGES;
         index		    index.html index.htm index.php;
     }}
     
-    location ~* \.php$ {{
+    location ~* \\.php$ {{
         fastcgi_pass	unix:/var/run/php-fpm/www.sock;
         fastcgi_index   index.php;
         include		    fastcgi_params;
